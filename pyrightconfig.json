@@ -1,0 +1,7 @@
+{
+    "typeCheckingMode": "off",
+    "reportUnknownMemberType": false,
+    "reportUnknownArgumentType": false,
+    "reportUnknownVariableType": false,
+    "reportPrivateUsage": false
+}
