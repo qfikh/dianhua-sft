@@ -191,7 +191,7 @@ def generate():
             }
         })
 
-    # 获取最后一句客服的话
+    # 获取最后一句客服的话，用于判断垫话是否重复
     last_cushion = ""
     for utterance in reversed(dialog_history):
         if utterance.startswith("客服："):
@@ -217,12 +217,11 @@ def generate():
             dianhua = ori_dianhua
         # 针对越界问题，比如发送短信、发送邮件，的垫话， 垫成：您说的这个。
 
-        commit_actions = ["发","记","转接","联系","专人跟进","帮您预约","帮您安排","马上安排"]
+        commit_actions = ["发","记","转接","联系","专人跟进","帮您预约","帮您安排","马上安排","有意思"]
         for action in commit_actions:
             if action in dianhua:
                 dianhua = RISK_CUSHION
-
-
+                break
 
         # 去重：与该 session 最近一次垫话比较，相同则随机替换
         if len(dianhua) > 3 and dianhua in last_cushion:
