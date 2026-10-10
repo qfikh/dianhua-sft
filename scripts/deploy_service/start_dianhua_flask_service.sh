@@ -4,6 +4,9 @@ mkdir -p $LOG_DIR
 
 . venv_sft_py311/bin/activate
 
+# 日志时间戳使用北京时间（gunicorn/logging 取 localtime）
+export TZ=Asia/Shanghai
+
 # 停掉旧服务
 pkill -f "dianhua_sft_interface" 2>/dev/null
 sleep 2

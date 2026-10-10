@@ -4,6 +4,9 @@ mkdir -p $LOG_DIR
 
 . venv_sft_py311/bin/activate
 
+# 日志时间戳使用北京时间（gunicorn/logging 取 localtime）
+export TZ=Asia/Shanghai
+
 # 按天生成日志文件名（每次启动时计算）
 LOG_FILE="$LOG_DIR/dianhua_flask_v2_$(date +%Y%m%d).log"
 
