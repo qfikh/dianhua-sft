@@ -8,9 +8,9 @@ mkdir -p $LOG_DIR
 export TZ=Asia/Shanghai
 
 # 停掉旧服务
-pkill -f "dianhua_sft_interface" 2>/dev/null
-sleep 2
-echo "旧服务已停止"
+# pkill -f "dianhua_sft_interface" 2>/dev/null
+# sleep 2
+# echo "旧服务已停止"
 
 # 启动新服务
 LOG_FILE="$LOG_DIR/dianhua_flask_$(date +%Y%m%d).log"
