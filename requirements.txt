@@ -4,4 +4,7 @@ requests>=2.28.0
 redis==8.1.0
 pyahocorasick==2.3.1
 gunicorn==26.2.0
+# 日志耗时统计脚本依赖 (scripts/deploy_service/trace_costtime_analyse.py)
+pandas==2.2.3
+openpyxl
 
