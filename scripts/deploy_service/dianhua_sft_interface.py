@@ -223,12 +223,15 @@ def generate():
         else:
             dianhua = ori_dianhua
         
-
         # 过度承诺 / 越权指令类垫话兜底替换：按规则表顺序匹配，命中即停
         for keywords, cushions in CUSHION_FALLBACKS:
             if any(kw in dianhua for kw in keywords):
                 dianhua = random.choice(cushions)
                 break
+        
+        # if 其他场景下包含"您说的这个。"，则替换成 您说的这个问题/情况。
+        if "您说的这个。" in dianhua:
+            dianhua = dianhua.replace("您说的这个。", random.choice(RISK_CUSHION))
 
         # 去重：与该 session 最近一次垫话比较，相同则随机替换
         if len(dianhua) > 3 and dianhua in last_cushion:
