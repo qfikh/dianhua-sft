@@ -30,8 +30,8 @@ COMMAND_CUSHION = ["请您稍等。", "请您稍等一下。","请您稍等片�
 # commit_actions = ["发","记","转接","联系","专人跟进","帮您预约","帮您安排","马上安排","有意思"]
 # 过度承诺 / 越权指令类垫话的兜底替换规则表 (触发关键词, 候选垫话)，按顺序匹配，命中即停
 CUSHION_FALLBACKS = [
-    (("记下", "记一下", "已记录", "已经记录", "专人跟进", "有意思"), PROMISE_CUSHION),  # 过度承诺--> 了解您说的这个情况
-    (("发给", "发送", "转接", "接通", "连线", "为您连接", "联系", "帮您预约", "帮您安排", "马上安排"), COMMAND_CUSHION), # 越权指令--> 请稍等
+    (("记着", "记下", "记一下", "已记录", "已经记录", "您记录", "专人跟进", "有意思"), PROMISE_CUSHION),  # 过度承诺--> 了解您说的这个情况
+    (("发给", "发送", "您发", "转接", "接通", "连线", "您连接", "联系", "您预约", "您安排", "马上安排"), COMMAND_CUSHION), # 越权指令--> 请稍等
 ]
 
 
@@ -105,7 +105,7 @@ def _clean_think_tags(text: str) -> str:
 
 def _call_vllm(dialog_text: str, timeout: int = 30) -> str:
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT_V31_1021},
+        {"role": "system", "content": SYSTEM_PROMPT_V31_1022},
         {"role": "user", "content": dialog_text}
     ]
     payload = {
@@ -168,7 +168,7 @@ def generate():
     source = data.get("source", "unknown")
     session_id = data.get("session_id", "unknown")
     dialog_history = data.get("dialog_history", [])
-    # 将dialog_history 中的"Client:"替换为 "客户："，"Service:"替换为 "客服："
+    # 完整的对话历史  将dialog_history 中的"Client:"替换为 "客户："，"Service:"替换为 "客服："
     dialog_history = [utterance.replace("Client:", "客户：").replace("Service:", "客服：") for utterance in dialog_history]
     # 合并连续同角色语句
     dialog_history = merge_consecutive_utterances(dialog_history)
@@ -218,8 +218,9 @@ def generate():
         total_latency = time.time() - start_total  # 整个方法耗时
 
         # 如果vllm返回的垫话包含"我帮您查一下"，则替换成随机查询等待场景垫话
-        if "查一下" in ori_dianhua:
-            dianhua = ori_dianhua.split("，")[0] + "，" + random.choice(PRE_SALES_CUSHIONS_V2)
+        if "查一下" in ori_dianhua: 
+            # dianhua = ori_dianhua.split("，")[0] + "，" + random.choice(PRE_SALES_CUSHIONS_V2) #可能会导致这样的badcase：原始模型垫话内容：再帮您查一下。 >>>>> 修改后垫话内容：再帮您查一下。，收到，我马上为您查询相关信息。
+            dianhua = random.choice(PRE_SALES_CUSHIONS_V2)
         else:
             dianhua = ori_dianhua
         
@@ -230,7 +231,7 @@ def generate():
                 break
         
         # if 其他场景下包含"您说的这个。"，则替换成 您说的这个问题/情况。
-        if "您说的这个。" in dianhua:
+        if "您说的这个。" in dianhua: # todo “您说的这个，”  直接完整替换吧
             dianhua = dianhua.replace("您说的这个。", random.choice(RISK_CUSHION))
 
         # 去重：与该 session 最近一次垫话比较，相同则随机替换
