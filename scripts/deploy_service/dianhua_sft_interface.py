@@ -12,6 +12,39 @@ app = Flask(__name__)
 import logging
 app.logger.setLevel(logging.INFO)
 
+# 业务日志按天落盘：每天自动切换 dianhua_flask_YYYYMMDD.log
+# gunicorn 运行日志（access/error）也合并写入同一按天文件
+# 日志目录优先取环境变量 LOG_DIR（与启动脚本一致），未设置则用脚本所在目录下的 logs
+LOG_DIR = os.getenv("LOG_DIR") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+
+
+class DailyFileHandler(logging.FileHandler):
+    """按天切换日志文件，跨天自动新建当天文件"""
+    def __init__(self, log_dir, encoding="utf-8"):
+        self._log_dir = log_dir
+        os.makedirs(log_dir, exist_ok=True)
+        super().__init__(self._today_path(), encoding=encoding)
+
+    def _today_path(self):
+        return os.path.join(self._log_dir, "dianhua_flask_%s.log" % datetime.now().strftime("%Y%m%d"))
+
+    def emit(self, record):
+        if self._today_path() != self.baseFilename:  # 已跨天，切换新文件
+            self.close()
+            self.baseFilename = self._today_path()
+            self.stream = self._open()
+        super().emit(record)
+
+app.logger.handlers = [DailyFileHandler(LOG_DIR)]
+app.logger.propagate = False  # 只写按天文件，避免重复输出到 stderr
+
+# gunicorn 运行日志（access / error）也合并写入同一按天文件
+# （master 进程启动阶段的少量日志仍在 dianhua_flask_gunicorn.log，app 加载后即并入按天文件）
+for _logger_name in ("gunicorn.access", "gunicorn.error"):
+    _gl = logging.getLogger(_logger_name)
+    _gl.handlers = [DailyFileHandler(LOG_DIR)]
+    _gl.propagate = False
+
 def jsonify(data, status=200):
     return Response(json.dumps(data, ensure_ascii=False), status=status, mimetype="application/json")
 
@@ -24,6 +57,7 @@ PRE_SALES_CUSHIONS_V2 = ['收到，我马上为您查询相关信息。','正在
 # 黄赌毒敏感话题、代词问题 用的垫话
 RISK_CUSHION = ["您说的这个问题。", "您问的这个问题。", "您说的这个情况。", "您提到的这个情况。"]
 # 过度承诺原有的垫话"您说的这个。"  “您说的这个”还有“您说的情况”像半句话，且有时候衔接的比较突兀。--> "了解您说的情况。"
+# 针对还有 认同、附和或确认客户对问题的负面评价如："确实", "真挺", "真是", "挺闹心", 也修改成这个。
 PROMISE_CUSHION = ["了解您说的情况了。","了解您的问题了。", "了解您的情况了。", "您说的情况已了解", "明白您的意思了。"]  # "了解您提到的情况。",
 # 述求指令类问题：垫话优化路径： "马上给您发送/转接/预约/安排" --> "您说的这个。" --> "请您稍等。"
 COMMAND_CUSHION = ["好的，请您稍等。", "请您稍等一下。", "请您稍等片刻。", "麻烦您稍等一下。"]
@@ -40,7 +74,7 @@ CUSHION_FALLBACKS = [
     (("真人", "人工"), ZHUAN_RENGONG_CUSHION),
     (("您先忙。", "您先忙，"), BUSY_CUSHION),
     (("您说的这个。", "您说的这个，", "您问的这个。", "您问的这个，", "您提到的这个。", "您提到的这个，", "您提的这个。", "您提的这个，"), RISK_CUSHION),  # "您说的这个问题。"
-    (("记着", "记下", "记一下", "已记录", "已经记录", "您记录", "专人跟进", "有意思"), PROMISE_CUSHION),  # 过度承诺--> 了解您说的这个情况
+    (("确实", "真挺", "真是", "挺闹心", "记着", "记下", "记一下", "已记录", "已经记录", "您记录", "专人跟进", "有意思"), PROMISE_CUSHION),  # 过度承诺--> 了解您说的这个情况
     (("发给", "发送", "您发", "转接", "接通", "连线", "您连接", "联系", "您预约", "您安排", "马上安排"), COMMAND_CUSHION), # 越权指令--> 请稍等
 ]
 
@@ -95,13 +129,13 @@ def contains_sensitive_word(text: str) -> str:
     return ""
 
 def _clean_think_tags(text: str) -> str:
-    """清理空的 <think\> 标签
-    如果 <think\></think\> 标签内部没有内容，则移除标签
+    """清理空的 <think> 标签
+    如果 <think></think> 标签内部没有内容，则移除标签
     """
-    # 移除空的 <think\></think\> 标签（包括空白内容）
-    text = re.sub(r'<think\>\s*</think\>', '', text, flags=re.DOTALL)
-    # 移除其他可能的情况：<think\>\n</think\> 等
-    text = re.sub(r'<think\>[\s\n]*</think\>', '', text)
+    # 移除空的 <think></think> 标签（包括空白内容）
+    text = re.sub(r'<think>\s*</think>', '', text, flags=re.DOTALL)
+    # 移除其他可能的情况：<think>\n</think> 等
+    text = re.sub(r'<think>[\s\n]*</think>', '', text)
     # 移除所有残留的<*>标签
     text = re.sub(r'<.*?>', '', text)
     return text.strip()
@@ -306,7 +340,8 @@ def generate():
             if any(kw in dianhua for kw in keywords):
                 dianhua = random.choice(cushions)
                 break
-            
+        
+        
         # 去重：与该 session 最近一次垫话比较，相同则随机替换
         if len(dianhua) > 3 and dianhua in last_cushion:
             for old, new in DIANHUA_REPLACEMENTS:

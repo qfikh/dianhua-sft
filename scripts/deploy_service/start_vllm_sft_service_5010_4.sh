@@ -66,7 +66,7 @@ nohup python -m vllm.entrypoints.openai.api_server \
     --served-model-name qwen3-4b_sft \
     --tensor-parallel-size 1 \
     --gpu-memory-utilization 0.9 \
-    --max-model-len 2048 \
+    --max-model-len 4096 \
     --max-num-batched-tokens 131072 \
     --max-num-seqs 64 \
     --block-size 16 \
