@@ -250,6 +250,8 @@ def generate():
     # 无需垫话的情况：对话为空、最后一句是客服说的
     if not dialog_history or last_conversation.startswith("客服："):
         response_data["latency"] = total_latency
+        log_data["message"] = "对话历史为空或最后一句话是客服说的，无需垫话。"
+        app.logger.info(json.dumps(log_data, ensure_ascii=False))
         return jsonify({
             "code": 200,
             "message": "对话历史为空或最后一句话是客服说的，无需垫话。",
@@ -264,7 +266,7 @@ def generate():
         log_data["message"] = "用户要求转人工，直接返回固定垫话。"
         log_data["final_dianhua"] = zhuanRenGong
         log_data["total_latency"] = round(total_latency, 4)
-        app.logger.info(log_data)
+        app.logger.info(json.dumps(log_data, ensure_ascii=False))
         return jsonify({
             "code": 200,
             "message": "用户要求转人工，直接返回固定垫话。",
@@ -278,7 +280,7 @@ def generate():
         log_data["message"] = "用户无输入，直接返回固定垫话。"
         log_data["final_dianhua"] = "您好。"
         log_data["total_latency"] = round(total_latency, 4)
-        app.logger.info(log_data)
+        app.logger.info(json.dumps(log_data, ensure_ascii=False))
         return jsonify({
             "code": 200,
             "message": "用户无输入，直接返回固定垫话。",
@@ -291,7 +293,7 @@ def generate():
         log_data["message"] = "用户回复：好的。返回固定垫话。"
         log_data["final_dianhua"] = "嗯嗯，好的。"
         log_data["total_latency"] = round(total_latency, 4)
-        app.logger.info(log_data)
+        app.logger.info(json.dumps(log_data, ensure_ascii=False))
         return jsonify({
             "code": 200,
             "message": "用户回复：好的。返回固定垫话。",
@@ -307,7 +309,7 @@ def generate():
         log_data["message"] = f"命中敏感词 {hit_word}, 直接垫固定话术。"
         log_data["final_dianhua"] = random.choice(RISK_CUSHION)
         log_data["total_latency"] = round(total_latency, 4)
-        app.logger.info(log_data)
+        app.logger.info(json.dumps(log_data, ensure_ascii=False))
         return jsonify({
             "code": 200,
             "message": "success",
@@ -369,7 +371,7 @@ def generate():
         log_data["final_dianhua"] = dianhua
         log_data["vllm_latency"] = round(vllm_latency, 4)
         log_data["total_latency"] = round(total_latency, 4)
-        app.logger.info(log_data)
+        app.logger.info(json.dumps(log_data, ensure_ascii=False))
 
         return jsonify({
             "code": 200,
