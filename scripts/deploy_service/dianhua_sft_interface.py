@@ -263,6 +263,7 @@ def generate():
         response_data["dianhua"] = zhuanRenGong
         log_data["message"] = "用户要求转人工，直接返回固定垫话。"
         log_data["final_dianhua"] = zhuanRenGong
+        log_data["total_latency"] = round(total_latency, 4)
         app.logger.info(log_data)
         return jsonify({
             "code": 200,
@@ -276,6 +277,7 @@ def generate():
         response_data["dianhua"] = "您好。" 
         log_data["message"] = "用户无输入，直接返回固定垫话。"
         log_data["final_dianhua"] = "您好。"
+        log_data["total_latency"] = round(total_latency, 4)
         app.logger.info(log_data)
         return jsonify({
             "code": 200,
@@ -288,6 +290,7 @@ def generate():
         response_data["dianhua"] = "嗯嗯，好的。" 
         log_data["message"] = "用户回复：好的。返回固定垫话。"
         log_data["final_dianhua"] = "嗯嗯，好的。"
+        log_data["total_latency"] = round(total_latency, 4)
         app.logger.info(log_data)
         return jsonify({
             "code": 200,
@@ -303,6 +306,7 @@ def generate():
         response_data["dianhua"] = random.choice(RISK_CUSHION) 
         log_data["message"] = f"命中敏感词 {hit_word}, 直接垫固定话术。"
         log_data["final_dianhua"] = random.choice(RISK_CUSHION)
+        log_data["total_latency"] = round(total_latency, 4)
         app.logger.info(log_data)
         return jsonify({
             "code": 200,
@@ -363,6 +367,8 @@ def generate():
         log_data["message"] = f"模型生成垫话，然后规则引擎修改"
         log_data["model_dianhua"] = model_dianhua
         log_data["final_dianhua"] = dianhua
+        log_data["vllm_latency"] = round(vllm_latency, 4)
+        log_data["total_latency"] = round(total_latency, 4)
         app.logger.info(log_data)
 
         return jsonify({
